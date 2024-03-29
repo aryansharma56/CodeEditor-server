@@ -5,7 +5,7 @@ const server = require("http").createServer(app);
 const socketIo = require("socket.io");
 const wss = socketIo(server, {
   cors: {
-    origin: "http://localhost:3001",
+    origin: "*",
     methods: ["GET", "POST"],
   },
 });
@@ -13,8 +13,9 @@ const axios = require("axios");
 const cors = require("cors");
 // Middleware for parsing JSON in the request body
 app.use(express.json());
-app.use(cors());
+// app.use(cors());
 const roomUsers = {};
+const roomLang = {};
 const options = {
   method: "POST",
   url: "https://online-code-compiler.p.rapidapi.com/v1/",
@@ -74,6 +75,11 @@ wss.on("connection", (ws) => {
         `Initializing roomUsers for roomId: ${JSON.stringify(roomId)}`
       );
       roomUsers[roomId] = [];
+      roomLang[roomId] = "noLang";
+    } else {
+      ws.broadcast
+        .to(roomId)
+        .emit("lang-select", { roomId, lang: roomLang[roomId] });
     }
     const existingUser = roomUsers[roomId].find(
       (user) => user.username === username
@@ -92,6 +98,7 @@ wss.on("connection", (ws) => {
     ws.to(roomId).emit("text-change", { roomId, username, data });
   });
   ws.on("lang-select", ({ roomId, lang }) => {
+    roomLang[roomId] = lang;
     ws.to(roomId).emit("lang-select", { roomId, lang });
     console.log("language selected to be ", lang);
   });
