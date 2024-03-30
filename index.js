@@ -76,11 +76,8 @@ wss.on("connection", (ws) => {
       );
       roomUsers[roomId] = [];
       roomLang[roomId] = "noLang";
-    } else {
-      ws.broadcast
-        .to(roomId)
-        .emit("lang-select", { roomId, lang: roomLang[roomId] });
     }
+
     const existingUser = roomUsers[roomId].find(
       (user) => user.username === username
     );
@@ -88,10 +85,10 @@ wss.on("connection", (ws) => {
       roomUsers[roomId].push({ id: ws.id, username });
     }
     ws.broadcast.to(roomId).emit("user-joined", username);
-    wss.in(roomId).emit(
-      "connected-users",
-      roomUsers[roomId].map((user) => user.username)
-    );
+    // ws.to(roomId).emit("lang-select", { roomId, lang: roomLang[roomId] });
+    const users = roomUsers[roomId].map((user) => user.username);
+    const lang = roomLang[roomId];
+    wss.in(roomId).emit("connected-users", { users, lang });
   });
   ws.on("text-change", ({ roomId, username, data }) => {
     // console.log("code is", data);
@@ -104,6 +101,6 @@ wss.on("connection", (ws) => {
   });
 });
 
-server.listen(3000, () => {
+server.listen(3001, () => {
   console.log("listening");
 });
